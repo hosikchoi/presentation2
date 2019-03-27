@@ -15,7 +15,6 @@ header-includes:
 - \usepackage{placeins} 
 ---
 
-
 <!-- For notebook options, https://www.rdocumentation.org/packages/rmarkdown/versions/1.8/topics/html_notebook -->
 
 *********
