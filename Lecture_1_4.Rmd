@@ -18,7 +18,6 @@ header-includes:
 <!-- For notebook options, https://www.rdocumentation.org/packages/rmarkdown/versions/1.8/topics/html_notebook -->
 
 *********
-#### 학습목표: \ \ R 패키지의 개념을 이해하고 설치 및 로딩 방법을 익혀 R 활용력을 높인다. {-}
 #### 학습목표: \ \ R 패키지의 개념을 이해하고, 설치 및 로딩 방법을 익혀 R 활용력을 높인다. {-}
 *********
 *********
