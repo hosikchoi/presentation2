@@ -1,0 +1,163 @@
+---
+title: "R 패키지(Package)의 이해"
+author: "K.P. Yeon and H.S. Choi"
+date: '`r format(Sys.Date(), "%B %d, %Y")`'
+
+output: 
+ html_notebook:
+    toc: true # table of content true
+    toc_depth: 3  # upto three depths of headings (specified by #, ## and ###)
+    toc_float: true
+    number_sections: true  ## if you want number sections at each table header
+    theme: united  # many options for theme, this one is my favorite.
+    highlight: tango  # specifies the syntax highlighting style
+header-includes:
+- \usepackage{placeins} 
+---
+
+
+<!-- For notebook options, https://www.rdocumentation.org/packages/rmarkdown/versions/1.8/topics/html_notebook -->
+
+*********
+#### 학습목표: \ \ R 패키지의 개념을 이해하고 설치 및 로딩 방법을 익혀 R 활용력을 높인다. {-}
+*********
+*********
+
+```{r, include=F}
+install.packages("knitr")
+install.packages("stringi")
+install.packages("rmarkdown")
+
+library(knitr) # For knitting document and include_graphics function
+library(stringi)
+library(rmarkdown)
+```
+
+# \. 패키지(Packages)  
+* 특정한 함수, 데이터, 컴파일된 코드 등을 모아 놓은 것
+* R의 가장 큰 장점으로서 수많은 연구자들이 제공하는 다양한 기능의 패키지들을 사용할 수 있다는 점
+* base, graphics, stats 등의 패키지들은 R 설치와 함께 자동으로 설치되므로 별도의 설정 없이 사용가능
+* 그러나 많은 패키지들은 필요에 따라 개별적으로 설치하고 R 세션으로 불러들여야 함
+
+<br />
+
+## 기본 패키지
+
+#### R을 설치하면 함께 설치되는 기본패키지가 있다. 별도로 설치하는 과정이 필요없다. {-}
+```{r}
+getOption("defaultPackages")
+```
+
+
+## RGui에서의 패키지 설치
+![Packages](Image\figure6.jpg)  
+
+<br />
+
+## R 명령어를 통한 패키지 설치 및 불러오기
+
+<br />
+
+- 패키지는 최초 한번만 인스톨(미러사이트로부터 해당 패키지 파일을 내 컴퓨터에 다운로드 하는 것)하면 됨. 이때 사용되는 함수는 install.packages("패키지이름").
+
+<br />
+
+- 패키지를 인스톨했다고 해도 R에서 바로 사용할 수는 없고, 현재 R 세션으로 패키지를 불러들여오는 과정을 거쳐야 함. 이때 사용되는 함수는 library(패키지이름) 또는 require(패키지이름). 
+
+<br />
+
+R 세션이 다시 시작되면(R을 끝내고 나갔다가 다시 실행하면), 필요한 패키지를 다시 library()를 이용하여 불러들여야 함.
+
+
+```{r}
+# DescTools라는 패키지 인스톨하기
+install.packages("DescTools")
+
+# DescTools 패키지를 R 세션으로 불러오기
+library(DescTools) #require(DescTools)
+```
+
+이제 DescTools 패키지에 있는 데이터셋, 함수 등을 사용할 수 있다.  
+ 
+<br />
+
+************************
+
+<br />
+
+# \. 패키지 우선순위 확인
+
+R 패키지는 많은 연구자들이 나름대로의 패키지를 생성하고 있기 때문에 때때로 서로 다른 패키지에 같은 이름의 함수가 존재할 때가 있다. 이때는 패키지의 우선순위를 잘 알고 사용해야하며 때로는 우선 순위를 바꿔줄 필요도 있다.  
+우선 다음과 같이 현재 설치되어 있는 모든 패키지 목록을 확인해보자.
+```{r}
+#installed.packages()
+head(installed.packages())
+```
+ 
+이 중에서 현재 세션에서 사용되고 있는 패키지를 확인해보자.
+```{r}
+search()
+```
+- 앞에 있는 패키지가 뒤에 있는 패키지보다 우선 순위가 높다. 즉, 같은 함수명이라면 앞에 있는 패키지에 들어있는 함수가 사용된다는 뜻이다. 
+- 이러한 우선순위는 패키지가 불러들여진 순서에 따라 결정된다. 
+- 즉, 나중에 불러온 패키지가 우선순위가 높다.
+
+<br />
+
+#### 다음 두 패키지를 설치하고 로드해 보자.{-}
+```{r}
+install.packages(c("MASS", "dplyr"))
+```
+```{r}
+library(MASS)
+library(dplyr)
+```
+
+<br />
+
+- dplyr을 나중에 불러 왔으므로 우선순위가 높다. (search()를 통해 확인)
+```{r}
+search()
+```
+
+<br />
+R Console에서 다음과 같이 입력해보자
+```{r}
+?select
+```
+dplyr패키지와 MASS 패키지에 모두 select 함수가 존재함을 볼 수 있다. 공교롭게 현재 R 세션에 dplyr과 MASS 패키지를 모두 불어온 상태이고 앞의 결과에 따르면 dplyr이 우선 순위가 높다. 따라서 MASS에 있는 select() 함수를 사용하고자 할 때 그냥 select()라고 해서는 안된다. 다음과 같이 두 가지 방법을 사용하자.
+
+<br />
+
+1. 우선순위에 상관없이 **패키지명::함수명** 형태로 사용하면 됨. 가령 MASS::select()  
+2. MASS 패키지를 detach하고 다시 불러들여서 우선 순위를 조정한다.
+```{r}
+detach(package:MASS, unload=TRUE, force=TRUE)
+library(MASS)
+search()
+```
+
+MASS가 dplyr 보다 앞에 있음을 확인하라.
+
+<br />
+
+
+*****
+# \. R 패키지의 활용
+
+<br />
+
+#### DescTools 패키지에 있는 Desc() 함수를 이용해서 탐색적 자료분석을 수행해보자.{-}
+
+<br />
+
+```{r}
+ls()
+```
+
+
+```{r}
+Desc(talent)
+```
+
+
