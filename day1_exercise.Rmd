@@ -1,0 +1,327 @@
+---
+title: "Exercise"
+author: "Yeon, K.P. and Choi, H.S."
+output:
+  word_document:
+    toc: yes
+    toc_depth: '3'
+  html_notebook:
+    code_folding: show
+    highlight: tango
+    number_sections: yes
+    theme: united
+    toc: yes
+    toc_depth: 3
+    toc_float: yes
+  pdf_document:
+    toc: yes
+    toc_depth: '3'
+  html_document:
+    df_print: paged
+    toc: yes
+    toc_depth: '3'
+header-includes: \usepackage{placeins}
+---
+
+*********
+#### 학습목표: \ \ R 데이터 분석 과정 연습문제. {-}  
+*********
+
+# \. A
+
+1) 다섯명의 시험성적이 80, 60, 70, 50, 90과 같다. 변수를 만들어 저장하고 평균을 구하여 보자. 
+```{r, include=FALSE}
+x <- c(80, 60, 70, 50, 90)
+mean(x)
+```
+
+<br />
+
+
+2) `exam.csv` 자료를 불러서 exam으로 저장하여라.
+
+```{r, include=FALSE}
+exam <- read.csv("exam.csv", header=TRUE)
+```
+
+<br />
+
+3) `exam`의 처음 4개의 자료를 확인하여 보자.
+
+```{r, include=FALSE}
+head(exam, 4)
+```
+
+<br />
+
+4) `exam`의 마지막 4개의 자료를 확인하여 보자.
+
+```{r, include=FALSE}
+tail(exam, 4)
+```
+
+<br />
+
+5) `exam` 자료의 차원은?
+
+```{r, include=FALSE}
+dim(exam)
+```
+
+<br />
+
+6) `exam` 를 요약하여 보자.
+
+```{r, include=FALSE}
+str(exam)
+summary(exam)
+```
+
+<br />
+
+7) `ggplot2` 패키지를 설치하고 로드하여보자.
+
+```{r, include=FALSE}
+#install.packages("ggplot2")
+library(ggplot2)
+```
+
+
+# \. B
+
+<br />  
+
+1) `ggplot2`에 내장된 `mpg` 데이터 셋을 로드하여 보자. 
+
+```{r, include=FALSE}
+data(mpg)
+```
+
+2) `mpg` 자료는 자동차 종류별 연비(mpg: miles per gallon)에 대한 값을 가지고 있다.
+
+- manufacturer: 제조사 
+- model: model name 
+- displ: engine displacement, in litres 
+- year: year of manufacture
+- cyl: number of cylinders 
+- trans: type of transmission
+- drv: f = front-wheel drive, r = rear wheel drive, 4 = 4wd
+- cty: city miles per gallon
+- hwy: highway miles per gallon
+- fl: fuel type
+- class: "type" of car
+
+변수명을 확인하여라. 
+
+```{r, include=FALSE}
+names(mpg)
+str(mpg)
+```
+
+<br />
+
+3) 변수 `manufacturer`의 변수명을 `company`로 변경하여 보아라.
+
+```{r, include=FALSE}
+names(mpg)
+str(mpg)
+```
+
+<br />
+
+
+4) `cty`는 도심 연비, `hwy`는 고속도로 연비이다. 복합연비 `cy`를 만들어 `mpg`자료에 추가하여 보자(cy=(cty+hwy)/2).
+
+```{r, include=FALSE}
+mpg$cy <- (mpg$cty+mpg$hwy)/2
+```
+
+<br />
+
+
+5) 복합연비 `cy`의 평균을 구하여라.
+
+```{r, include=FALSE}
+mean(mpg$cy)
+```
+<br />
+
+
+6) 복합연비가 5)에서 구한 평균값보다 크면 "high", 그 외에는 "low"를 부여하는 
+파생변수 `class_cy`를 생성하여 `mpg`자료에 추가하여라. 
+
+```{r, include=FALSE}
+mpg$class_cy <- ifelse(mpg$cy > mean(mpg$cy), "high", "low")
+```
+
+<br />
+
+
+7) 총 몇 종류의 `manufacturer`이 조사되었는가?
+
+
+```{r, include=FALSE}
+mpg$class_cy <- ifelse(mpg$cy > mean(mpg$cy), "high", "low")
+```
+
+<br />
+
+8) 총 몇 종류의 `model`이 조사되었는가?
+
+```{r, include=FALSE}
+table(mpg$manufacturer)
+grep("hyun", mpg$manufacturer)
+```
+
+<br />
+
+9) `manufacturer`가 "hyundai"인 자동차의 모델은 총 몇 종류가 조사되었는가? 
+
+```{r, include=FALSE}
+ix <- grep("hyun", mpg$manufacturer)
+table(mpg[ix, "model"])
+```
+
+<br />
+
+# \. C 
+다음 연산의 결과를 답하시오.
+
+(1) 
+
+```{r, eval=FALSE}
+x <- seq(1,9,by=2)
+flag <- x<=3
+x[!flag]
+```
+
+<br />
+
+(2) 
+
+```{r, eval=FALSE}
+x <- c(0, 7, 8)
+is.na(x/x)
+```
+
+<br />
+
+(3)
+
+```{r, eval=FALSE}
+x <- c(3,5,6,1)
+x[x>6 & x<10]
+```
+
+<br />
+
+(4) 
+
+```{r, eval=FALSE}
+x <- c(3,10,6,5)
+y <- c(7,1,9,8)
+z <- cbind(x, y)
+ix <- sort(x, decreasing=T, index.return=T)$ix
+z[ix, ]
+```
+
+<br />
+
+(5) 
+```{r, eval=FALSE}  
+x <- c(5,3,6,10)
+which.min(x)
+```
+
+<br />
+
+(6)
+```{r, eval=FALSE}
+x <- c(5,3,6,10)
+x[-c(1,3)]
+```
+
+<br />
+
+(7)
+```{r, eval=FALSE}
+x <-  c(1, 4, NA, 20) 
+length(x)
+```
+
+<br />
+
+(8) 
+```{r, eval=FALSE}
+rep(c(1,2), each=3)
+```
+
+<br />
+
+
+(9) 
+```{r, eval=FALSE}
+x <- c(3,5,6,10)
+y <- c(7,1,9,8)
+z <- cbind(x,y)
+z[z[,1]<6,]    
+```
+
+<br />
+
+(10) 
+```{r, eval=FALSE}
+normalize <- function(x, m, s)
+{
+  list(z=(x-m)/s, m=m, s=s)
+}
+x <- c(1,3,5)
+c(mean(x), sd(x))
+#[1] 3 2
+
+normalize(x, m=mean(x), s=sd(x))
+```
+
+<br />
+
+(11) 
+```{r, eval=FALSE}
+answer <- 1
+for(j in 1:3)
+{
+  answer <- answer * j
+}
+answer 
+```
+
+<br />
+
+(12) 
+```{r, eval=FALSE}
+s <- 0; k<-0
+while(k <= 10)
+{
+  s <- s + k
+  k <- k + 1
+}
+s
+```
+<br />
+
+(13) 
+```{r, eval=FALSE}
+x <- c(50,60,70); y <- c(70,50,40)
+L <- list(kor=x, math=y)
+L
+```
+
+<br />
+
+(14) 
+```{r, eval=FALSE}
+x <- c(“F”,“F”,“M”,“M”,“M”)
+y <- c(“10대”,“20대”,“10대”,“20대”,“10대”)
+table(x,y)
+```
+
+<br />
