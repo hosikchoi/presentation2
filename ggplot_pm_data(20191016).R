@@ -1,53 +1,10 @@
-cal_aic <- function(y, x, obj){
-  bm <- rbind(obj$beta0.rec, obj$beta.rec[[1]])
-  #n by step  
-  n <- nrow(x)
-  nstep <- ncol(bm)
-  dfv = colSums(bm!=0)
-  pred_m <- cbind(1,x) %*% bm
-  loss <- apply(pred_m, 2, function(xx){sum((xx-y)^2)})
-  mse <- loss[nstep]/(n-dfv[nstep])
-  rloss <- loss/2/n/mse + 2*(dfv)/n
-  return(rloss)  
-}
-
-matplot.comlasso.rev <- function(lam, coef1, cnums1, cnums2, cnums3, breaks = FALSE, ...) 
-{
-  S <- sum(abs(coef1[nrow(coef1), ]))
-  s1 <- rowSums(abs(coef1))/S
-  col_names <- colnames(coef1)
-  matplot(s1, coef1, ..., type = "b", pch = "*")
-  abline(h = 0, lty = 3)
-  axis(4, at = coef1[nrow(coef1), cnums1], 
-       labels = col_names[cnums1], cex = 0.8, cex.lab = 0.3, 
-       line = 0)
-  axis(4, at = coef1[nrow(coef1), cnums2], 
-       labels = col_names[cnums2], cex = 0.8, 
-       cex.lab = 0.3, tick = FALSE, line = 1)
-  axis(4, at = coef1[nrow(coef1), cnums3], 
-       labels = col_names[cnums3], cex = 0.8, 
-       cex.lab = 0.3, tick = FALSE, line = 0.5)
-  stepid = trunc(as.numeric(dimnames(coef1)[[1]]))
-  if (breaks) {
-    axis(3, at = s1, labels = paste(stepid), cex = 0.8)
-    abline(v = s1)
-  }
-}
-#############################################
-#############################################
 #############################################
 #############################################
 # load data
-load("./a18_comp.RData");
-library(comlasso)
+load("./a18.RData")
 library(magrittr)
 library(dplyr)
 library(ggplot2)
-a18_comp <- a18_comp %>% 
-  mutate(sido=substr(reg, 1, 2)) %>%
-  filter(sido=="서울") %>%
-  mutate(gu=gsub(pattern="서울 ",  replace="", reg))
-a18_comp[which(a18_comp==0, arr.ind=TRUE),4] <- 1e-8
 a18 <- a18 %>% 
   mutate(sido=substr(reg, 1, 2)) %>%
   filter(sido=="서울") %>%
@@ -178,5 +135,155 @@ par(las=1)
 GGally::ggpairs(mxg,diag=list(continuous="density", alpha=0.5),axisLabels="show")
 
 ####
+
+rm(list=ls())
+library(Matrix)
+library(Rcpp)
+library(RcppArmadillo)
+library(devtools)
+library(Rglpk)
+library(MethylCapSig)
+install_github("glmgen/genlasso")
+library(genlasso)
+#setwd("~/github/ComLasso")
+sourceCpp('./src/inner.cpp')
+source("./src/ComLassoC.R")
+# income
+rX<- read.csv("./data/capital_season.csv")
+ry<- read.csv("./data/income.csv")[,-1]
+y = unlist(ry[5,]/ry[1,])
+y = y[-length(y)] # 2003-1~2019-1
+X = as.matrix(rX[,130:197]) # 2002-1~2018-4
+X = t(X)
+x = sweep(X,1,rowSums(X),"/")
+idx = 1:nrow(x)
+y
+x1 = x[tail(idx, 65),]
+x2 = x[tail(idx, 65)-1,]
+x3 = x[tail(idx, 65)-2,]
+x4 = x[tail(idx, 65)-3,]
+xx = cbind(x1,x2,x3,x4)
+xx = log(xx)
+pk = rep(8,4)
+fit = comLassoC(xx,y,pk=pk,lam_min=0,tol=1e-08,KKT_check=FALSE)
+dim(fit$coefMat)
+coefMat = fit$coefMat
+est.var = sum((y-cbind(1,xx)%*%coefMat[nrow(coefMat),])^2)/(length(y)-1)
+
+aic.vec = c()
+i = 1
+for (i in 1:nrow(coefMat))
+{
+  coefvec = coefMat[i,-1]
+  df = 0
+  for (j in 1:4)
+  {
+    subvec = coefvec[((j-1)*8+1):(j*8)]
+    if (sum(subvec !=0)>0) df <- df + (sum(subvec !=0))-1
+  }
+  aic.vec[i]<-
+    sum((y-cbind(1,xx)%*%coefMat[i,])^2)/est.var + log(length(y)) + 2*df
+}
+plot(aic.vec)
+which.min(aic.vec)
+library(ggplot2)
+data.frame(ID=1:length(aic.vec), aic=aic.vec) %>% 
+  ggplot(aes(x=ID,y=aic))+ geom_line() + 
+  xlab("") + 
+  geom_vline(aes(xintercept=17, color="red"), linetype=2) + 
+  theme(legend.position = "none")
+
+## 17
+par(mfrow=c(2,2))
+for(k in 1:4){
+  #k = 1
+  for(i in 1:8)
+  {
+    if (i == 1)
+      plot(fit$coefMat[,i+8*(k-1)+1], ylim = c(-10,10), col = i, 
+           type = 'l', ylab="coefficients", xlab="")
+    if (i>1)
+      lines(fit$coefMat[,i+8*(k-1)+1], ylim = c(-10,10),
+            col = i)
+    abline(v=17, lty=2, lwd=0.6)
+  }
+  mtext(paste0(k,"-lagged year"), side=3)
+}
+fit$coefMat[17,-1]
+library(xtable)
+mat <- matrix(fit$coefMat[17,-1],byrow=T,ncol=8)
+xtable(round(mat,3),4)
+mat
+
+#for
+rX<- read.csv("./data/capital_season.csv", stringsAsFactors=FALSE, header=TRUE)
+ry<- read.csv("./data/income.csv")[,-1]
+y = unlist(ry[5,]/ry[1,])
+y = y[-length(y)] # 2003-1~2019-1
+X = as.matrix(rX[,130:197]) # 2002-1~2018-4
+X = t(X)
+x = sweep(X,1,rowSums(X),"/")
+idx = 1:nrow(x)
+y
+x1 = x[tail(idx, 65),]
+
+library(ggplot2)
+mx1 <- reshape2::melt(x1)
+names(mx1)
+library(magrittr)
+mx1 %<>% 
+  #  dplyr::mutate(Var1=as.character(Var1)) %>%
+  dplyr::rename(time=Var1, asset=Var2, prop=value) %>%
+  dplyr::mutate(asset=factor(asset, levels=1:8, labels=c("RS","NS","IF","TE","ME","IP","R&D","Others")))
+
+g1 <- data.frame(mx1) %>% 
+  ggplot(mapping=aes(x=time, y=prop, group=asset)) + 
+  geom_area(aes(fill=asset)) + xlab("")
+g1
+
+dd <- c()
+for(i in 2003:2018){
+  if(i %% 2==1){
+    #dd <- c(dd, c(paste0(i, " - Q1"), "-Q2", "-Q3", "-Q4"))
+    dd <- c(dd, c(paste0(i, " - 1Q lagged"), "", "", ""))
+  }
+  #else{
+  #  dd <- c(dd, c(paste0(i, " - 1Q lagged"), "", "", ""))
+  #}
+}
+dd <- c(dd, "2019 - 1Q lagged")
+
+#g2 <- g1 +  scale_x_discrete(breaks=seq(1,65, by=2), labels=dd) + 
+#  theme(axis.text.x = element_text(angle = 45, hjust = 1, vjust =1, size=7)) +
+#  labs(x="", y="Proportion") 
+xlab_title <- levels(mx1[,1])
+xlab_title[c(1,9,17,25,33,41,49,57,65)] <- 
+  sapply(strsplit(xlab_title[c(1,9,17,25,33,41,49,57,65)], "X"), function(x){x[2]})
+xlab_title[-c(1,9,17,25,33,41,49,57,65)] <- ""
+mx1$time <- as.character(mx1$time)
+mx1$time[1] <- "time"
+g2 <- g1 +  scale_x_discrete(mx1$time, labels=xlab_title) + 
+  theme(axis.text.x = element_text(angle = 45, hjust = 1, vjust =1, size=15)) +
+  theme(axis.text.y = element_text(size=15)) +
+  theme(legend.text = element_text(size=20), 
+        legend.title=element_text(size=20)) +
+  theme(legend.position = "top") + 
+  xlab("") + 
+  labs(y="Proportion")
+g2
+
+ey <- rep(y, times=8)
+ma <- 7.920426
+mi <- 5.191999
+g3 <- g2 + geom_line(aes(x=time, y=(ey-mi)/(ma-mi), group=asset))
+g3
+
+g3 + scale_y_continuous(
+  sec.axis = sec_axis(~ ./1.5 + 0.2, name = "income inequality", 
+                      labels = function(b) { round((ma-mi)*(b)+mi,2) }
+  )
+) + theme(axis.title.y = element_text(size=15)) 
+
+
 
 
