@@ -1,0 +1,15 @@
+1.우선 conda 자체를 업그레이드 
+conda update -n base conda
+
+2.다음으로 설치된 파이썬 패키지를 모두 최신 버전으로 업데이트 
+conda update --all
+
+3. tensorflow 를 설치
+pip install tensorflow
+
+4.keras도 설치
+pip install keras
+
+5. 설치확인
+import tensorflow
+import keras
